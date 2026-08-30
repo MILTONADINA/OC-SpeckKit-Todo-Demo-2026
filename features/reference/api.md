@@ -1,6 +1,6 @@
 # API Reference
 
-**Status:** reflects Feature 4 (user profile management) on `feature/4-user-profile-management`.
+**Status:** reflects Feature 5 (todo due date) on `feature/5-todo-due-date`.
 
 API mount path: `/todo` (see `backend/server.js`).
 
@@ -34,7 +34,7 @@ API mount path: `/todo` (see `backend/server.js`).
 |--------|------|--------|---------|
 | `GET` | `/todo/lists/:listId/todos` | `200` | Fetch todos in an owned list |
 | `POST` | `/todo/lists/:listId/todos` | `201` | Add a todo to an owned list |
-| `PUT` | `/todo/todos/:id` | `200` | Update todo title and/or `completed` |
+| `PUT` | `/todo/todos/:id` | `200` | Update todo title, `completed`, and/or `dueDate` |
 | `DELETE` | `/todo/todos/:id` | `204` | Delete a todo owned by the caller |
 
 ### Users (session required)
@@ -70,9 +70,32 @@ Flat JSON (no envelope):
 
 ```json
 {
-  "title": "Buy milk"
+  "title": "Buy milk",
+  "dueDate": "2026-07-15"
 }
 ```
+
+`dueDate` is optional. Omit it or send `null` for no due date.
+
+## Update todo request body
+
+Any combination of:
+
+```json
+{
+  "title": "Buy oat milk",
+  "completed": false,
+  "dueDate": "2026-07-20"
+}
+```
+
+Clear due date:
+
+```json
+{ "dueDate": null }
+```
+
+Omitting `dueDate` on `PUT` leaves the existing value unchanged.
 
 ## Todo success response (`GET`, `POST`, `PUT`)
 
@@ -82,11 +105,14 @@ Flat JSON (no envelope):
   "listId": 1,
   "title": "Buy milk",
   "completed": false,
+  "dueDate": "2026-07-15",
   "userId": 42,
   "createdAt": "2026-08-29T12:05:00.000Z",
   "updatedAt": "2026-08-29T12:05:00.000Z"
 }
 ```
+
+`dueDate` is `null` when not set.
 
 `GET /todo/lists/:listId/todos` returns an array ordered **incomplete first**, then by `createdAt` ascending.
 
@@ -132,6 +158,7 @@ Flat JSON (no envelope):
 |-----------|--------|---------|
 | Empty todo title | `400` | `Todo title is required.` |
 | Todo title too long | `400` | `Todo title must be 255 characters or fewer.` |
+| Invalid due date | `400` | `Due date must be a valid date in YYYY-MM-DD format.` |
 | List not found / not owned | `404` | `List with id=<id> not found.` |
 | Todo not found / not owned | `404` | `Todo with id=<id> not found.` |
 | User not found / not self | `404` | `User with id=<id> not found.` |

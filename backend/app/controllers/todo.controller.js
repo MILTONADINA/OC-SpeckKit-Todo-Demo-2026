@@ -5,6 +5,8 @@ import {
 } from "../authorization/authorization.js";
 
 const MAX_TITLE_LENGTH = 255;
+const DUE_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const DUE_DATE_ERROR = "Due date must be a valid date in YYYY-MM-DD format.";
 
 function parseId(value) {
   const id = parseInt(value, 10);
@@ -28,6 +30,29 @@ function validateTodoTitle(title) {
   }
 
   return { value: trimmed };
+}
+
+function validateDueDate(value) {
+  if (value === null || value === undefined || value === "") {
+    return { value: null };
+  }
+
+  if (typeof value !== "string" || !DUE_DATE_REGEX.test(value)) {
+    return { error: DUE_DATE_ERROR };
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return { error: DUE_DATE_ERROR };
+  }
+
+  return { value };
 }
 
 const exports = {};
@@ -75,11 +100,24 @@ exports.create = async (req, res) => {
     return res.status(400).send({ message: validation.error });
   }
 
+  let dueDate = null;
+
+  if (req.body.dueDate !== undefined && req.body.dueDate !== null) {
+    const dueDateValidation = validateDueDate(req.body.dueDate);
+
+    if (dueDateValidation.error) {
+      return res.status(400).send({ message: dueDateValidation.error });
+    }
+
+    dueDate = dueDateValidation.value;
+  }
+
   const todo = await db.todo.create({
     title: validation.value,
     listId: list.id,
     userId: req.user.id,
     completed: false,
+    dueDate,
   });
 
   return res.status(201).send(todo);
@@ -112,6 +150,16 @@ exports.update = async (req, res) => {
 
   if (req.body.completed !== undefined) {
     updates.completed = Boolean(req.body.completed);
+  }
+
+  if ("dueDate" in req.body) {
+    const dueDateValidation = validateDueDate(req.body.dueDate);
+
+    if (dueDateValidation.error) {
+      return res.status(400).send({ message: dueDateValidation.error });
+    }
+
+    updates.dueDate = dueDateValidation.value;
   }
 
   if (Object.keys(updates).length === 0) {

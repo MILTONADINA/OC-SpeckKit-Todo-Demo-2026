@@ -1,6 +1,6 @@
 # Behavior & Rules Reference
 
-**Living snapshot** of product rules currently in force on `feature/4-user-profile-management`.
+**Living snapshot** of product rules currently in force on `feature/5-todo-due-date`.
 
 | File | Role |
 |------|------|
@@ -31,6 +31,10 @@
 | Title required (non-whitespace) | `Dashboard.vue` todo dialogs | `400` — `Todo title is required.` |
 | Title max 255 characters | — | `400` — `Todo title must be 255 characters or fewer.` |
 | Titles trimmed before save | `Dashboard.vue` trims on submit | `todo.controller.js` trims |
+| Due date format `YYYY-MM-DD` | `type="date"` inputs | `400` — `Due date must be a valid date in YYYY-MM-DD format.` |
+| Due date optional on create/update | add/edit dialogs | `null` when unset |
+| Clear due date on update | clear date field + Save | `PUT` with `dueDate: null` |
+| Omit `dueDate` on update | — | existing value unchanged |
 
 ## UI (dashboard — list items)
 
@@ -39,11 +43,13 @@
 | Items icon | Each list row has **Items** icon (`aria-label`: **View items for &lt;name&gt;**) |
 | List-items dialog | Title **&lt;list name&gt; — Items**; **+ Add Item** (`oc-cta`); **Close** button |
 | Add/edit/delete todos | Nested dialogs; checkbox toggles `completed` |
+| Due date on add/edit | Optional `type="date"` field in add-item and edit-item dialogs |
+| Due date display | Show formatted date on row when set (e.g. **Due Jul 15, 2026**) |
+| Overdue styling | Incomplete todos with `dueDate` before today (local calendar) use error color on date text |
+| Completed todos | No overdue styling even if past due |
 | Completed styling | Struck-through / muted title when `completed: true` |
 | Empty state | **"No todos in this list yet."** inside items dialog |
 | Add item scope | **+ Add Item** only visible inside open items dialog — not on main lists view |
-
-Due dates are deferred to Feature 5.
 
 ## Profile ownership & scoping
 

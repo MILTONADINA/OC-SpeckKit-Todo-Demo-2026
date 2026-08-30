@@ -32,7 +32,9 @@ const showEditTodoDialog = ref(false);
 const showDeleteTodoDialog = ref(false);
 
 const addTodoTitle = ref("");
+const addTodoDueDate = ref("");
 const editTodoTitle = ref("");
+const editTodoDueDate = ref("");
 const selectedTodo = ref(null);
 
 const addTodoFormRef = ref(null);
@@ -112,12 +114,14 @@ function closeItemsDialog() {
 
 function openAddTodoDialog() {
   addTodoTitle.value = "";
+  addTodoDueDate.value = "";
   showAddTodoDialog.value = true;
 }
 
 function openEditTodoDialog(todo) {
   selectedTodo.value = todo;
   editTodoTitle.value = todo.title;
+  editTodoDueDate.value = todo.dueDate || "";
   showEditTodoDialog.value = true;
 }
 
@@ -208,12 +212,19 @@ async function handleAddTodo() {
   addTodoLoading.value = true;
 
   try {
-    const response = await todoServices.createTodo(itemsList.value.id, {
+    const payload = {
       title: addTodoTitle.value.trim(),
-    });
+    };
+
+    if (addTodoDueDate.value) {
+      payload.dueDate = addTodoDueDate.value;
+    }
+
+    const response = await todoServices.createTodo(itemsList.value.id, payload);
     todos.value = [...todos.value, response.data];
     showAddTodoDialog.value = false;
     addTodoTitle.value = "";
+    addTodoDueDate.value = "";
   } catch (error) {
     itemsErrorMessage.value = error.response?.data?.message || "Failed to add todo.";
   } finally {
@@ -235,6 +246,7 @@ async function handleEditTodo() {
   try {
     const response = await todoServices.updateTodo(selectedTodo.value.id, {
       title: editTodoTitle.value.trim(),
+      dueDate: editTodoDueDate.value || null,
     });
     todos.value = todos.value.map((todo) =>
       todo.id === selectedTodo.value.id ? response.data : todo
@@ -281,6 +293,35 @@ async function toggleTodoCompleted(todo, completed) {
 
 function itemsAriaLabel(list) {
   return `View items for ${list.name}`;
+}
+
+function formatDueDate(dueDate) {
+  if (!dueDate) {
+    return "";
+  }
+
+  const [year, month, day] = dueDate.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function isTodoOverdue(todo) {
+  if (todo.completed || !todo.dueDate) {
+    return false;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const [year, month, day] = todo.dueDate.split("-").map(Number);
+  const dueDate = new Date(year, month - 1, day);
+
+  return dueDate < today;
 }
 
 onMounted(loadLists);
@@ -492,6 +533,13 @@ onMounted(loadLists);
               {{ todo.title }}
             </v-list-item-title>
 
+            <v-list-item-subtitle
+              v-if="todo.dueDate"
+              :class="{ 'text-error': isTodoOverdue(todo) }"
+            >
+              Due {{ formatDueDate(todo.dueDate) }}
+            </v-list-item-subtitle>
+
             <template #append>
               <v-btn
                 icon="mdi-pencil"
@@ -533,6 +581,15 @@ onMounted(loadLists);
             class="mb-4"
           />
 
+          <v-text-field
+            v-model="addTodoDueDate"
+            label="Due date"
+            type="date"
+            density="comfortable"
+            rounded="lg"
+            class="mb-4"
+          />
+
           <div class="d-flex justify-end ga-2">
             <v-btn variant="text" @click="showAddTodoDialog = false">
               Cancel
@@ -562,6 +619,15 @@ onMounted(loadLists);
             density="comfortable"
             rounded="lg"
             :rules="todoTitleRules"
+            class="mb-4"
+          />
+
+          <v-text-field
+            v-model="editTodoDueDate"
+            label="Due date"
+            type="date"
+            density="comfortable"
+            rounded="lg"
             class="mb-4"
           />
 

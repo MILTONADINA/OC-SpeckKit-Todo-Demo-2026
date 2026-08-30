@@ -78,6 +78,15 @@ function addTodoDialog(wrapper) {
     .find((dialog) => dialog.text().includes("Todo title"));
 }
 
+function yesterdayIsoDate() {
+  const date = new Date();
+  date.setDate(date.getDate() - 1);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 async function openItemsDialog(wrapper, listName) {
   await wrapper.find(`[aria-label="View items for ${listName}"]`).trigger("click");
   await flushPromises();
@@ -412,7 +421,10 @@ describe("Feature 3 — Todo List Item Management", () => {
       await editDialog.find("form").trigger("submit.prevent");
       await flushPromises();
 
-      expect(updateTodoMock).toHaveBeenCalledWith(10, { title: "Buy oat milk" });
+      expect(updateTodoMock).toHaveBeenCalledWith(10, {
+        title: "Buy oat milk",
+        dueDate: null,
+      });
       expect(wrapper.text()).toContain("Buy oat milk");
     });
 
@@ -437,6 +449,234 @@ describe("Feature 3 — Todo List Item Management", () => {
 
       expect(deleteTodoMock).toHaveBeenCalledWith(10);
       expect(wrapper.text()).not.toContain("Buy milk");
+    });
+  });
+});
+
+/**
+ * Feature 5 — Todo Due Date
+ * Spec: features/feature-5-todo-due-date.md
+ */
+describe("Feature 5 — Todo Due Date", () => {
+  beforeEach(() => {
+    getListsMock.mockReset();
+    createListMock.mockReset();
+    updateListMock.mockReset();
+    deleteListMock.mockReset();
+    getTodosMock.mockReset();
+    createTodoMock.mockReset();
+    updateTodoMock.mockReset();
+    deleteTodoMock.mockReset();
+    localStorage.clear();
+    Utils.setStore("user", sampleUser);
+  });
+
+  describe("US-5.1 — Set a due date when creating a todo", () => {
+    it("User adds a todo with a due date", async () => {
+      getListsMock.mockResolvedValue({
+        data: [{ id: 1, name: "Groceries", userId: 1 }],
+      });
+      getTodosMock.mockResolvedValue({ data: [] });
+      createTodoMock.mockResolvedValue({
+        data: {
+          id: 10,
+          title: "Buy milk",
+          listId: 1,
+          userId: 1,
+          completed: false,
+          dueDate: "2026-07-15",
+        },
+      });
+
+      const { wrapper } = await mountDashboard();
+      await openItemsDialog(wrapper, "Groceries");
+
+      await findButtonByText(findDialogContaining(wrapper, "— Items"), "+ Add Item").trigger("click");
+      await flushPromises();
+
+      const addDialog = addTodoDialog(wrapper);
+      const inputs = addDialog.findAll("input");
+      await inputs[0].setValue("Buy milk");
+      await inputs[1].setValue("2026-07-15");
+      await addDialog.find("form").trigger("submit.prevent");
+      await flushPromises();
+
+      expect(createTodoMock).toHaveBeenCalledWith(1, {
+        title: "Buy milk",
+        dueDate: "2026-07-15",
+      });
+      expect(wrapper.text()).toContain("Jul");
+      expect(wrapper.text()).toContain("2026");
+    });
+
+    it("User adds a todo without a due date", async () => {
+      getListsMock.mockResolvedValue({
+        data: [{ id: 1, name: "Groceries", userId: 1 }],
+      });
+      getTodosMock.mockResolvedValue({ data: [] });
+      createTodoMock.mockResolvedValue({
+        data: {
+          id: 10,
+          title: "Buy milk",
+          listId: 1,
+          userId: 1,
+          completed: false,
+          dueDate: null,
+        },
+      });
+
+      const { wrapper } = await mountDashboard();
+      await openItemsDialog(wrapper, "Groceries");
+
+      await findButtonByText(findDialogContaining(wrapper, "— Items"), "+ Add Item").trigger("click");
+      await flushPromises();
+
+      const addDialog = addTodoDialog(wrapper);
+      await addDialog.find("input").setValue("Buy milk");
+      await addDialog.find("form").trigger("submit.prevent");
+      await flushPromises();
+
+      expect(createTodoMock).toHaveBeenCalledWith(1, { title: "Buy milk" });
+      expect(wrapper.text()).not.toContain("Due ");
+    });
+  });
+
+  describe("US-5.3 — Edit or clear a due date", () => {
+    it("User sets a due date when editing a todo", async () => {
+      getListsMock.mockResolvedValue({
+        data: [{ id: 1, name: "Groceries", userId: 1 }],
+      });
+      getTodosMock.mockResolvedValue({
+        data: [{ id: 10, title: "Buy milk", listId: 1, userId: 1, completed: false, dueDate: null }],
+      });
+      updateTodoMock.mockResolvedValue({
+        data: {
+          id: 10,
+          title: "Buy milk",
+          listId: 1,
+          userId: 1,
+          completed: false,
+          dueDate: "2026-07-20",
+        },
+      });
+
+      const { wrapper } = await mountDashboard();
+      await openItemsDialog(wrapper, "Groceries");
+
+      await wrapper.find('[aria-label="Edit todo"]').trigger("click");
+      await flushPromises();
+
+      const editDialog = findDialogContaining(wrapper, "Edit Item");
+      const inputs = editDialog.findAll("input");
+      await inputs[1].setValue("2026-07-20");
+      await editDialog.find("form").trigger("submit.prevent");
+      await flushPromises();
+
+      expect(updateTodoMock).toHaveBeenCalledWith(10, {
+        title: "Buy milk",
+        dueDate: "2026-07-20",
+      });
+      expect(wrapper.text()).toContain("Jul");
+      expect(wrapper.text()).toContain("2026");
+    });
+
+    it("User clears a due date when editing a todo", async () => {
+      getListsMock.mockResolvedValue({
+        data: [{ id: 1, name: "Groceries", userId: 1 }],
+      });
+      getTodosMock.mockResolvedValue({
+        data: [
+          {
+            id: 10,
+            title: "Buy milk",
+            listId: 1,
+            userId: 1,
+            completed: false,
+            dueDate: "2026-07-20",
+          },
+        ],
+      });
+      updateTodoMock.mockResolvedValue({
+        data: {
+          id: 10,
+          title: "Buy milk",
+          listId: 1,
+          userId: 1,
+          completed: false,
+          dueDate: null,
+        },
+      });
+
+      const { wrapper } = await mountDashboard();
+      await openItemsDialog(wrapper, "Groceries");
+
+      await wrapper.find('[aria-label="Edit todo"]').trigger("click");
+      await flushPromises();
+
+      const editDialog = findDialogContaining(wrapper, "Edit Item");
+      const inputs = editDialog.findAll("input");
+      await inputs[1].setValue("");
+      await editDialog.find("form").trigger("submit.prevent");
+      await flushPromises();
+
+      expect(updateTodoMock).toHaveBeenCalledWith(10, {
+        title: "Buy milk",
+        dueDate: null,
+      });
+      expect(wrapper.text()).not.toContain("Due ");
+    });
+  });
+
+  describe("US-5.4 — Spot overdue todos", () => {
+    it("Incomplete todo past due date is styled as overdue", async () => {
+      const yesterday = yesterdayIsoDate();
+
+      getListsMock.mockResolvedValue({
+        data: [{ id: 1, name: "Groceries", userId: 1 }],
+      });
+      getTodosMock.mockResolvedValue({
+        data: [
+          {
+            id: 10,
+            title: "Buy milk",
+            listId: 1,
+            userId: 1,
+            completed: false,
+            dueDate: yesterday,
+          },
+        ],
+      });
+
+      const { wrapper } = await mountDashboard();
+      await openItemsDialog(wrapper, "Groceries");
+
+      expect(wrapper.find(".text-error").exists()).toBe(true);
+    });
+
+    it("Completed todo past due date is not styled as overdue", async () => {
+      const yesterday = yesterdayIsoDate();
+
+      getListsMock.mockResolvedValue({
+        data: [{ id: 1, name: "Groceries", userId: 1 }],
+      });
+      getTodosMock.mockResolvedValue({
+        data: [
+          {
+            id: 10,
+            title: "Buy milk",
+            listId: 1,
+            userId: 1,
+            completed: true,
+            dueDate: yesterday,
+          },
+        ],
+      });
+
+      const { wrapper } = await mountDashboard();
+      await openItemsDialog(wrapper, "Groceries");
+
+      expect(wrapper.find(".text-error").exists()).toBe(false);
+      expect(wrapper.text()).toContain("Due ");
     });
   });
 });
