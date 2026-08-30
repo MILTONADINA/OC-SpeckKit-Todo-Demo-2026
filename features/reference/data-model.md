@@ -1,6 +1,6 @@
 # Data Model Reference
 
-**Status:** reflects Feature 5 (todo due date) on `feature/5-todo-due-date`.
+**Status:** reflects the integrated product on `dev` after Features 1-5.
 
 ## Tables
 
@@ -35,7 +35,7 @@
 | Field | Type | Rules |
 |-------|------|-------|
 | `id` | INTEGER PK | Auto-increment |
-| `name` | STRING | Required; max 100 chars |
+| `name` | STRING(100) | Required; max 100 chars |
 | `userId` | INTEGER FK | Required; references `users.id`; set from `req.user.id` on create |
 | `createdAt` | DATE | Sequelize timestamps |
 | `updatedAt` | DATE | Sequelize timestamps |
@@ -63,3 +63,13 @@
 * `Todo belongsTo User` (`userId`)
 * `List hasMany Todo` (`listId`, `onDelete: CASCADE`)
 * `Todo belongsTo List` (`listId`)
+
+## Feature provenance
+
+| Change | Introduced |
+|--------|------------|
+| `users` and `sessions`; user-session association | Feature 1 |
+| `lists`; user-list association | Feature 2 |
+| `todos`; user-todo and list-todo associations; cascade delete | Feature 3 |
+| Password excluded from the User model default scope | Feature 4 |
+| Nullable `todos.dueDate` (`DATEONLY`) | Feature 5 |
