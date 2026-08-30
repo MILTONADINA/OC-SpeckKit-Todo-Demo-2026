@@ -1,6 +1,6 @@
 # API Reference
 
-**Status:** reflects Feature 2 (todo list management) on `feature/2-todo-list-management`.
+**Status:** reflects Feature 3 (todo list item management) on `feature/3-todo-list-item-management`.
 
 API mount path: `/todo` (see `backend/server.js`).
 
@@ -26,7 +26,16 @@ API mount path: `/todo` (see `backend/server.js`).
 | `GET` | `/todo/lists` | `200` | Fetch lists owned by authenticated user |
 | `POST` | `/todo/lists` | `201` | Create a new list |
 | `PUT` | `/todo/lists/:listId` | `200` | Rename a list owned by the caller |
-| `DELETE` | `/todo/lists/:listId` | `204` | Delete a list owned by the caller |
+| `DELETE` | `/todo/lists/:listId` | `204` | Delete a list and cascade-delete its todos |
+
+### Todos (session required)
+
+| Method | Path | Status | Purpose |
+|--------|------|--------|---------|
+| `GET` | `/todo/lists/:listId/todos` | `200` | Fetch todos in an owned list |
+| `POST` | `/todo/lists/:listId/todos` | `201` | Add a todo to an owned list |
+| `PUT` | `/todo/todos/:id` | `200` | Update todo title and/or `completed` |
+| `DELETE` | `/todo/todos/:id` | `204` | Delete a todo owned by the caller |
 
 ### Health
 
@@ -50,71 +59,45 @@ Flat JSON (no envelope):
 }
 ```
 
-## Register request body
+## Create todo request body
 
 ```json
 {
-  "fName": "Jane",
-  "lName": "Doe",
-  "email": "jdoe@example.com",
-  "username": "jdoe",
-  "password": "password123"
+  "title": "Buy milk"
 }
 ```
 
-## Login request body
+## Todo success response (`GET`, `POST`, `PUT`)
 
 ```json
 {
-  "username": "jdoe",
-  "password": "password123"
-}
-```
-
-## Create list request body
-
-```json
-{
-  "name": "Groceries"
-}
-```
-
-## List success response (`GET /todo/lists`, `POST`, `PUT`)
-
-Single list object (`201` / `200`):
-
-```json
-{
-  "id": 1,
-  "name": "Groceries",
+  "id": 10,
+  "listId": 1,
+  "title": "Buy milk",
+  "completed": false,
   "userId": 42,
-  "createdAt": "2026-08-29T12:00:00.000Z",
-  "updatedAt": "2026-08-29T12:00:00.000Z"
+  "createdAt": "2026-08-29T12:05:00.000Z",
+  "updatedAt": "2026-08-29T12:05:00.000Z"
 }
 ```
 
-`GET /todo/lists` returns an array of list objects, ordered alphabetically by `name`.
+`GET /todo/lists/:listId/todos` returns an array ordered **incomplete first**, then by `createdAt` ascending.
 
 ## Conventions
 
 * Flat JSON responses (no `{ success, data }` envelope).
 * Errors: `{ "message": "Human-readable explanation." }` with appropriate HTTP status.
 * Authenticated routes: `Authorization: Bearer <token>`.
-* Password hashes are never returned by the API.
-* Cross-user list access returns `404` (not `403`).
+* Cross-user list or todo access returns `404` (not `403`).
 
 ## Common error messages
 
 | Situation | Status | Message |
 |-----------|--------|---------|
-| Missing email on register | `400` | `Email is required.` |
-| Invalid email format | `400` | `Enter a valid email address.` |
-| Missing username | `400` | `Username is required.` |
-| Password too short | `400` | `Password must be at least 8 characters.` |
-| Duplicate username | `400` | `Username is already taken.` |
-| Duplicate email | `400` | `Email is already registered.` |
-| Invalid login | `401` | `Invalid username or password.` |
-| Missing/expired token | `401` | `Unauthorized! …` |
-| Empty list name | `400` | `List name is required.` |
-| List name too long | `400` | `List name must be 100 characters or fewer.` |
+| Empty todo title | `400` | `Todo title is required.` |
+| Todo title too long | `400` | `Todo title must be 255 characters or fewer.` |
 | List not found / not owned | `404` | `List with id=<id> not found.` |
+| Todo not found / not owned | `404` | `Todo with id=<id> not found.` |
+| Missing/expired token | `401` | `Unauthorized! …` |
+
+See prior features for auth and list error messages.

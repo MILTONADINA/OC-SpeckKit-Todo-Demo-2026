@@ -51,6 +51,10 @@ export const createListForUser = async (userId, name) => {
   return db.list.create({ userId, name });
 };
 
+export const createTodoForList = async (userId, listId, title, completed = false) => {
+  return db.todo.create({ userId, listId, title, completed });
+};
+
 export const authHeader = (token) => ({
   Authorization: `Bearer ${token}`,
 });

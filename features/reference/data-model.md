@@ -1,6 +1,6 @@
 # Data Model Reference
 
-**Status:** reflects Feature 2 (todo list management) on `feature/2-todo-list-management`.
+**Status:** reflects Feature 3 (todo list item management) on `feature/3-todo-list-item-management`.
 
 ## Tables
 
@@ -40,9 +40,25 @@
 | `createdAt` | DATE | Sequelize timestamps |
 | `updatedAt` | DATE | Sequelize timestamps |
 
+### `todos`
+
+| Field | Type | Rules |
+|-------|------|-------|
+| `id` | INTEGER PK | Auto-increment |
+| `listId` | INTEGER FK | Required; references `lists.id`; cascade on list delete |
+| `title` | STRING | Required; max 255 chars |
+| `completed` | BOOLEAN | Default `false` |
+| `userId` | INTEGER FK | Required; references `users.id`; set from `req.user.id` on create |
+| `createdAt` | DATE | Sequelize timestamps |
+| `updatedAt` | DATE | Sequelize timestamps |
+
 ## Associations
 
 * `User hasMany Session` (`userId`)
 * `Session belongsTo User` (`userId`)
 * `User hasMany List` (`userId`)
 * `List belongsTo User` (`userId`)
+* `User hasMany Todo` (`userId`)
+* `Todo belongsTo User` (`userId`)
+* `List hasMany Todo` (`listId`, `onDelete: CASCADE`)
+* `Todo belongsTo List` (`listId`)

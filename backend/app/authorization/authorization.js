@@ -35,3 +35,9 @@ export async function getAccessibleListOrNull(req, listId) {
     where: { id: listId, userId: req.user.id },
   });
 }
+
+export async function getAccessibleTodoOrNull(req, todoId) {
+  return db.todo.findOne({
+    where: { id: todoId, userId: req.user.id },
+  });
+}

@@ -1,9 +1,6 @@
 # Behavior & Rules Reference
 
-**Living snapshot** of product rules currently in force on `feature/2-todo-list-management`.
-
-These files answer: *"What rules does the app enforce right now?"*  
-They do **not** authorize new scope — implement only from `features/feature-*.md`.
+**Living snapshot** of product rules currently in force on `feature/3-todo-list-item-management`.
 
 | File | Role |
 |------|------|
@@ -13,75 +10,37 @@ They do **not** authorize new scope — implement only from `features/feature-*.
 
 ---
 
-## Authentication
+## Todo ownership & scoping
 
 | Rule | Enforcement | Provenance |
 |------|-------------|------------|
-| Login uses **username + password** (not email-only) | `POST /todo/login` body; `Login.vue` fields | Feature 1 FR-001 |
-| Usernames stored **lowercase** | `auth.controller.js` normalizes on register/login | Feature 1 + security.mdc |
-| Passwords hashed with **bcrypt** (`SALT_ROUNDS = 10`) | `auth.controller.js`; never returned in API | Feature 1 FR-003 |
-| Sessions use **JWT + Session table**; client sends `Authorization: Bearer <token>` | `session` model; `authenticate` middleware; `services.js` interceptor | Feature 1 FR-004 |
-| Session lifetime **24 hours** | JWT `expiresIn: 86400`; `expirationDate` on session row | Feature 1 FR-005 |
-| Login **reuses** non-expired session for same user | `findOrCreateSession` in `auth.controller.js` | Feature 1 FR-006 |
-| Default role for new users is **`worker`** | `user.model.js` default; register controller | Feature 1 FR-007 |
-| Authenticated requests resolve to **`req.user.id`** | `authenticate` middleware | Feature 1 FR-008 |
+| All todo endpoints require **`authenticate`** | `list.routes.js`, `todo.routes.js` | Feature 3 FR-001 |
+| Todo belongs to one list and one user for its lifetime | `listId` + `userId` FKs | Feature 3 FR-002 |
+| Reads/updates/deletes scoped by **`userId: req.user.id`** | `todo.controller.js`; `getAccessibleTodoOrNull` | Feature 3 FR-003 |
+| Parent list must be owned before create/read todos | `getAccessibleListOrNull` in todo controller | Feature 3 FR-004 |
+| Create sets **`userId` and `listId` from server context only** | `todo.controller.js` ignores spoofed body fields | Feature 3 FR-005 |
+| Cross-user list/todo access returns **`404`** | authorization helpers | Feature 3 US-3.5 |
+| New todos default to **`completed: false`** | `todo.controller.js` create | Feature 3 FR-007 |
+| Deleting a list **cascades** todos | `List hasMany Todo` with `onDelete: CASCADE` | Feature 3 FR-008 |
+| Todos ordered **incomplete first**, then `createdAt` ASC | `todo.controller.js` `findAllByList` | Feature 3 FR-009 |
 
-## Registration validation
+## Todo validation
 
 | Rule | Client | Server |
 |------|--------|--------|
-| Email required | `emailRules` in `validation.js` | `400` — `Email is required.` |
-| Email format | `emailRules` regex | `400` — `Enter a valid email address.` |
-| Username required | `Register.vue` rules | `400` — `Username is required.` |
-| Password min 8 chars | `Register.vue` rules | `400` — `Password must be at least 8 characters.` |
-| Confirm password must match | `Register.vue` rules | — (client only) |
-| Duplicate username | — | `400` — `Username is already taken.` |
-| Duplicate email | — | `400` — `Email is already registered.` |
+| Title required (non-whitespace) | `Dashboard.vue` todo dialogs | `400` — `Todo title is required.` |
+| Title max 255 characters | — | `400` — `Todo title must be 255 characters or fewer.` |
+| Titles trimmed before save | `Dashboard.vue` trims on submit | `todo.controller.js` trims |
 
-## Session & routing (frontend)
-
-| Rule | Enforcement | Provenance |
-|------|-------------|------------|
-| Session stored in `localStorage` key **`user`** | `authServices.persistUserSession` | Feature 1 US-1.1 |
-| Protected routes require session; unauthenticated → **login** | `router.beforeEach` `requiresAuth` | Feature 1 US-1.5 |
-| Signed-in user visiting login/register → **home** | `router.beforeEach` `guestOnly` | Feature 1 US-1.3 |
-| `401` clears `user` and redirects to login | `services.js` response interceptor | Feature 1 US-1.3 |
-| Sign out calls API, clears `localStorage`, routes to login | `MenuBar.vue` + `authServices.logoutUser` | Feature 2 |
-
-## List ownership & scoping
-
-| Rule | Enforcement | Provenance |
-|------|-------------|------------|
-| All list endpoints require **`authenticate`** | `list.routes.js` | Feature 2 FR-001 |
-| List belongs to one user for its lifetime | `userId` FK; never updated after create | Feature 2 FR-002 |
-| Reads/updates/deletes scoped by **`userId: req.user.id`** | `list.controller.js`; `getAccessibleListOrNull` | Feature 2 FR-003 |
-| Create sets **`userId` from `req.user.id` only** | `list.controller.js` ignores body `userId` | Feature 2 FR-004 |
-| Cross-user list access returns **`404`** (not `403`) | `getAccessibleListOrNull` + controller | Feature 2 US-2.5 |
-| Lists ordered **alphabetically by name** in API responses | `order: [["name", "ASC"]]` | Feature 2 FR-006 |
-
-## List validation
-
-| Rule | Client | Server |
-|------|--------|--------|
-| Name required (non-whitespace) | `Dashboard.vue` rules | `400` — `List name is required.` |
-| Name max 100 characters | — | `400` — `List name must be 100 characters or fewer.` |
-| Names trimmed before save | `Dashboard.vue` trims on submit | `list.controller.js` trims |
-
-## UI (dashboard)
-
-| Screen | Route name | Notes |
-|--------|------------|-------|
-| Login | `login` | Full-screen; no `MenuBar` |
-| Register | `register` | Full-screen; no `MenuBar` |
-| Dashboard | `home` | **My Lists** heading; `+ New List` dialog; row edit/delete icons |
-| App chrome | — | `MenuBar` shows user name + **Sign out**; hidden on login/register |
+## UI (dashboard — list items)
 
 | UI rule | Detail |
 |---------|--------|
-| Empty state | **"No lists yet. Create your first list."** |
-| Row actions | Edit/delete icon buttons with `aria-label` **Edit list** / **Delete list** |
-| Primary CTAs | `oc-cta` on **+ New List** and dialog **Create** |
-| Loading | Progress indicator while lists fetch |
-| Errors | `<v-alert type="error">` for API failures |
+| Items icon | Each list row has **Items** icon (`aria-label`: **View items for &lt;name&gt;**) |
+| List-items dialog | Title **&lt;list name&gt; — Items**; **+ Add Item** (`oc-cta`); **Close** button |
+| Add/edit/delete todos | Nested dialogs; checkbox toggles `completed` |
+| Completed styling | Struck-through / muted title when `completed: true` |
+| Empty state | **"No todos in this list yet."** inside items dialog |
+| Add item scope | **+ Add Item** only visible inside open items dialog — not on main lists view |
 
-Todo **items** UI is deferred to Feature 3.
+Due dates are deferred to Feature 5.
