@@ -231,6 +231,10 @@ describe("Feature 2 — Todo List Management", () => {
   });
 });
 
+/**
+ * Feature 3 — Todo List Item Management
+ * Spec: features/feature-3-todo-list-item-management.md
+ */
 describe("Feature 3 — Todo List Item Management", () => {
   beforeEach(() => {
     getListsMock.mockReset();

@@ -29,4 +29,8 @@ They do **not** authorize new scope — implement only from `features/feature-*.
 
 | Area | Introduced |
 |------|------------|
-| *(none yet)* | Add rows as features merge to `dev` |
+| Authentication, registration, login, and sessions | Feature 1 — User Authentication & Session Management |
+| Private todo-list CRUD and dashboard list view | Feature 2 — Todo List Management |
+| Todo-item CRUD, ownership, and list-items dialog | Feature 3 — Todo List Item Management |
+| Self-service profile and profile-menu logout | Feature 4 — User Profile Management |
+| Optional todo due dates and overdue styling | Feature 5 — Todo Due Date |
