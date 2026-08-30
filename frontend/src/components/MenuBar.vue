@@ -8,6 +8,15 @@ const router = useRouter();
 
 const user = computed(() => Utils.getStore("user"));
 
+const displayName = computed(() => {
+  if (!user.value) {
+    return "";
+  }
+
+  const parts = [user.value.fName, user.value.lName].filter(Boolean);
+  return parts.join(" ") || user.value.username;
+});
+
 async function handleSignOut() {
   try {
     await authServices.logoutUser();
@@ -21,19 +30,24 @@ async function handleSignOut() {
 </script>
 
 <template>
-  <v-container class="py-10">
-    <h1 class="text-h4 mb-2">Welcome, {{ user?.fName }}!</h1>
-    <p class="text-body-1 mb-6">
-      You are signed in. The full dashboard arrives in Feature 2.
-    </p>
+  <v-app-bar color="surface" elevation="1">
+    <v-app-bar-title class="text-primary font-weight-bold">
+      Todo Speckit
+    </v-app-bar-title>
+
+    <v-spacer />
+
+    <span v-if="displayName" class="text-body-2 me-4">
+      {{ displayName }}
+    </span>
 
     <v-btn
       color="primary"
       variant="elevated"
-      class="oc-cta"
+      class="oc-cta me-4"
       @click="handleSignOut"
     >
       Sign out
     </v-btn>
-  </v-container>
+  </v-app-bar>
 </template>

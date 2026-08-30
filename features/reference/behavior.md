@@ -1,6 +1,6 @@
 # Behavior & Rules Reference
 
-**Living snapshot** of product rules currently in force on `feature/1-user-auth`.
+**Living snapshot** of product rules currently in force on `feature/2-todo-list-management`.
 
 These files answer: *"What rules does the app enforce right now?"*  
 They do **not** authorize new scope — implement only from `features/feature-*.md`.
@@ -46,21 +46,42 @@ They do **not** authorize new scope — implement only from `features/feature-*.
 | Protected routes require session; unauthenticated → **login** | `router.beforeEach` `requiresAuth` | Feature 1 US-1.5 |
 | Signed-in user visiting login/register → **home** | `router.beforeEach` `guestOnly` | Feature 1 US-1.3 |
 | `401` clears `user` and redirects to login | `services.js` response interceptor | Feature 1 US-1.3 |
-| Sign out calls API, clears `localStorage`, routes to login | `Home.vue` + `authServices.logoutUser` | Feature 1 US-1.4 |
+| Sign out calls API, clears `localStorage`, routes to login | `MenuBar.vue` + `authServices.logoutUser` | Feature 2 |
 
-## Data scoping (foundation)
+## List ownership & scoping
 
 | Rule | Enforcement | Provenance |
 |------|-------------|------------|
-| `GET /todo/lists` returns only rows where `userId = req.user.id` | `list.controller.js` | Feature 1 US-1.3 / Feature 2 FR-003 |
-| No API returns another user's profile or session | Auth controllers scope by token | Feature 1 Data Ownership |
+| All list endpoints require **`authenticate`** | `list.routes.js` | Feature 2 FR-001 |
+| List belongs to one user for its lifetime | `userId` FK; never updated after create | Feature 2 FR-002 |
+| Reads/updates/deletes scoped by **`userId: req.user.id`** | `list.controller.js`; `getAccessibleListOrNull` | Feature 2 FR-003 |
+| Create sets **`userId` from `req.user.id` only** | `list.controller.js` ignores body `userId` | Feature 2 FR-004 |
+| Cross-user list access returns **`404`** (not `403`) | `getAccessibleListOrNull` + controller | Feature 2 US-2.5 |
+| Lists ordered **alphabetically by name** in API responses | `order: [["name", "ASC"]]` | Feature 2 FR-006 |
 
-## UI (Feature 1)
+## List validation
+
+| Rule | Client | Server |
+|------|--------|--------|
+| Name required (non-whitespace) | `Dashboard.vue` rules | `400` — `List name is required.` |
+| Name max 100 characters | — | `400` — `List name must be 100 characters or fewer.` |
+| Names trimmed before save | `Dashboard.vue` trims on submit | `list.controller.js` trims |
+
+## UI (dashboard)
 
 | Screen | Route name | Notes |
 |--------|------------|-------|
-| Login | `login` | Full-screen; no `MenuBar`; **Sign in** CTA with loading state |
-| Register | `register` | Full-screen; no `MenuBar`; shared `emailRules` |
-| Home placeholder | `home` | Welcome with first name; standalone **Sign out** button |
+| Login | `login` | Full-screen; no `MenuBar` |
+| Register | `register` | Full-screen; no `MenuBar` |
+| Dashboard | `home` | **My Lists** heading; `+ New List` dialog; row edit/delete icons |
+| App chrome | — | `MenuBar` shows user name + **Sign out**; hidden on login/register |
 
-`MenuBar` is **not** present in Feature 1 (added in Feature 2).
+| UI rule | Detail |
+|---------|--------|
+| Empty state | **"No lists yet. Create your first list."** |
+| Row actions | Edit/delete icon buttons with `aria-label` **Edit list** / **Delete list** |
+| Primary CTAs | `oc-cta` on **+ New List** and dialog **Create** |
+| Loading | Progress indicator while lists fetch |
+| Errors | `<v-alert type="error">` for API failures |
+
+Todo **items** UI is deferred to Feature 3.

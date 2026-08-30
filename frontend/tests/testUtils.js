@@ -23,10 +23,11 @@ export async function createTestRouter(initialPath = "/") {
 }
 
 export async function mountWithPlugins(component, options = {}) {
-  const { router: providedRouter, global, ...rest } = options;
+  const { router: providedRouter, global, attachTo, ...rest } = options;
   const router = providedRouter ?? (await createTestRouter());
 
   const wrapper = mount(component, {
+    attachTo,
     ...rest,
     global: {
       plugins: [vuetify, router],

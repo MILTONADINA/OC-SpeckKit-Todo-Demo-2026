@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 import Utils from "../src/config/utils.js";
-import Home from "../src/views/Home.vue";
+import Dashboard from "../src/views/Dashboard.vue";
 import Login from "../src/views/Login.vue";
 import Register from "../src/views/Register.vue";
 
@@ -16,7 +16,7 @@ function createAppRouter() {
       {
         path: "/",
         name: "home",
-        component: Home,
+        component: Dashboard,
         meta: { requiresAuth: true },
       },
       {

@@ -1,6 +1,6 @@
 # Data Model Reference
 
-**Status:** reflects Feature 1 (user auth) on `feature/1-user-auth`.
+**Status:** reflects Feature 2 (todo list management) on `feature/2-todo-list-management`.
 
 ## Tables
 
@@ -35,12 +35,10 @@
 | Field | Type | Rules |
 |-------|------|-------|
 | `id` | INTEGER PK | Auto-increment |
-| `name` | STRING | Required |
-| `userId` | INTEGER FK | Required; references `users.id` |
+| `name` | STRING | Required; max 100 chars |
+| `userId` | INTEGER FK | Required; references `users.id`; set from `req.user.id` on create |
 | `createdAt` | DATE | Sequelize timestamps |
 | `updatedAt` | DATE | Sequelize timestamps |
-
-> `lists` is registered for authenticated read scoping in Feature 1 tests; full list CRUD ships in Feature 2.
 
 ## Associations
 

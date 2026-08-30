@@ -54,3 +54,12 @@ export const createListForUser = async (userId, name) => {
 export const authHeader = (token) => ({
   Authorization: `Bearer ${token}`,
 });
+
+export const registerAndLogin = async (overrides = {}) => {
+  const { response: registerResponse } = await registerUser(overrides);
+
+  return {
+    user: registerResponse.body,
+    token: registerResponse.body.token,
+  };
+};

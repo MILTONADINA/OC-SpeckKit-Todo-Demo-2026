@@ -1,6 +1,6 @@
 # API Reference
 
-**Status:** reflects Feature 1 (user auth) on `feature/1-user-auth`.
+**Status:** reflects Feature 2 (todo list management) on `feature/2-todo-list-management`.
 
 API mount path: `/todo` (see `backend/server.js`).
 
@@ -18,7 +18,15 @@ API mount path: `/todo` (see `backend/server.js`).
 | Method | Path | Status | Purpose |
 |--------|------|--------|---------|
 | `POST` | `/todo/logout` | `200` | Invalidate current session token |
+
+### Lists (session required)
+
+| Method | Path | Status | Purpose |
+|--------|------|--------|---------|
 | `GET` | `/todo/lists` | `200` | Fetch lists owned by authenticated user |
+| `POST` | `/todo/lists` | `201` | Create a new list |
+| `PUT` | `/todo/lists/:listId` | `200` | Rename a list owned by the caller |
+| `DELETE` | `/todo/lists/:listId` | `204` | Delete a list owned by the caller |
 
 ### Health
 
@@ -63,21 +71,29 @@ Flat JSON (no envelope):
 }
 ```
 
-## List response (`GET /todo/lists`)
-
-Array of list objects owned by the caller:
+## Create list request body
 
 ```json
-[
-  {
-    "id": 1,
-    "name": "Groceries",
-    "userId": 42,
-    "createdAt": "2026-08-29T12:00:00.000Z",
-    "updatedAt": "2026-08-29T12:00:00.000Z"
-  }
-]
+{
+  "name": "Groceries"
+}
 ```
+
+## List success response (`GET /todo/lists`, `POST`, `PUT`)
+
+Single list object (`201` / `200`):
+
+```json
+{
+  "id": 1,
+  "name": "Groceries",
+  "userId": 42,
+  "createdAt": "2026-08-29T12:00:00.000Z",
+  "updatedAt": "2026-08-29T12:00:00.000Z"
+}
+```
+
+`GET /todo/lists` returns an array of list objects, ordered alphabetically by `name`.
 
 ## Conventions
 
@@ -85,6 +101,7 @@ Array of list objects owned by the caller:
 * Errors: `{ "message": "Human-readable explanation." }` with appropriate HTTP status.
 * Authenticated routes: `Authorization: Bearer <token>`.
 * Password hashes are never returned by the API.
+* Cross-user list access returns `404` (not `403`).
 
 ## Common error messages
 
@@ -98,3 +115,6 @@ Array of list objects owned by the caller:
 | Duplicate email | `400` | `Email is already registered.` |
 | Invalid login | `401` | `Invalid username or password.` |
 | Missing/expired token | `401` | `Unauthorized! …` |
+| Empty list name | `400` | `List name is required.` |
+| List name too long | `400` | `List name must be 100 characters or fewer.` |
+| List not found / not owned | `404` | `List with id=<id> not found.` |
