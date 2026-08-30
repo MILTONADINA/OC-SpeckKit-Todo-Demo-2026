@@ -58,6 +58,9 @@ describe("Feature 2 — Todo List Management", () => {
 
       expect(response.status).toBe(400);
       expect(response.body).toEqual({ message: "List name must be 100 characters or fewer." });
+
+      const columns = await db.sequelize.getQueryInterface().describeTable("lists");
+      expect(columns.name.type).toBe("VARCHAR(100)");
     });
   });
 
