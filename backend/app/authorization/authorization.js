@@ -41,3 +41,11 @@ export async function getAccessibleTodoOrNull(req, todoId) {
     where: { id: todoId, userId: req.user.id },
   });
 }
+
+export async function getAccessibleUserOrNull(req, userId) {
+  if (userId !== req.user.id) {
+    return null;
+  }
+
+  return db.user.findByPk(userId);
+}

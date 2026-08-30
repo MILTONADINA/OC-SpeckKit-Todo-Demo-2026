@@ -1,6 +1,6 @@
 # API Reference
 
-**Status:** reflects Feature 3 (todo list item management) on `feature/3-todo-list-item-management`.
+**Status:** reflects Feature 4 (user profile management) on `feature/4-user-profile-management`.
 
 API mount path: `/todo` (see `backend/server.js`).
 
@@ -36,6 +36,13 @@ API mount path: `/todo` (see `backend/server.js`).
 | `POST` | `/todo/lists/:listId/todos` | `201` | Add a todo to an owned list |
 | `PUT` | `/todo/todos/:id` | `200` | Update todo title and/or `completed` |
 | `DELETE` | `/todo/todos/:id` | `204` | Delete a todo owned by the caller |
+
+### Users (session required)
+
+| Method | Path | Status | Purpose |
+|--------|------|--------|---------|
+| `GET` | `/todo/users/:id` | `200` | Fetch authenticated user's own profile |
+| `PUT` | `/todo/users/:id` | `200` | Update authenticated user's own profile |
 
 ### Health
 
@@ -83,12 +90,41 @@ Flat JSON (no envelope):
 
 `GET /todo/lists/:listId/todos` returns an array ordered **incomplete first**, then by `createdAt` ascending.
 
+## Update profile request body
+
+```json
+{
+  "fName": "Jane",
+  "lName": "Doe",
+  "email": "jane@example.com",
+  "username": "jdoe",
+  "password": "newpassword123"
+}
+```
+
+`password` is optional. Omit it to leave the current password unchanged.
+
+## Profile success response (`GET` / `PUT`)
+
+```json
+{
+  "id": 42,
+  "fName": "Jane",
+  "lName": "Doe",
+  "email": "jane@example.com",
+  "username": "jdoe",
+  "role": "worker",
+  "createdAt": "2026-08-29T12:00:00.000Z",
+  "updatedAt": "2026-08-29T12:05:00.000Z"
+}
+```
+
 ## Conventions
 
 * Flat JSON responses (no `{ success, data }` envelope).
 * Errors: `{ "message": "Human-readable explanation." }` with appropriate HTTP status.
 * Authenticated routes: `Authorization: Bearer <token>`.
-* Cross-user list or todo access returns `404` (not `403`).
+* Cross-user list, todo, or profile access returns `404` (not `403`).
 
 ## Common error messages
 
@@ -98,6 +134,9 @@ Flat JSON (no envelope):
 | Todo title too long | `400` | `Todo title must be 255 characters or fewer.` |
 | List not found / not owned | `404` | `List with id=<id> not found.` |
 | Todo not found / not owned | `404` | `Todo with id=<id> not found.` |
+| User not found / not self | `404` | `User with id=<id> not found.` |
+| Duplicate username on profile update | `400` | `Username is already taken.` |
+| Duplicate email on profile update | `400` | `Email is already registered.` |
 | Missing/expired token | `401` | `Unauthorized! …` |
 
 See prior features for auth and list error messages.

@@ -1,6 +1,6 @@
 # Data Model Reference
 
-**Status:** reflects Feature 3 (todo list item management) on `feature/3-todo-list-item-management`.
+**Status:** reflects Feature 4 (user profile management) on `feature/4-user-profile-management`.
 
 ## Tables
 
